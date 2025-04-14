@@ -29,7 +29,7 @@ const requestBodySchema = z.object({
   ),
 })
 
-// メッセージ処理のコアロジックをROPスタイルにリファクタリング
+// メッセージ処理のコアロジック
 async function handleMessageEvent(
   c: Context<{ Bindings: Env }>,
   event: z.infer<typeof requestBodySchema>['events'][number],
@@ -55,13 +55,10 @@ async function handleMessageEvent(
   // チェーンの最終結果を処理
   await processingChain.match(
     (finalResponse) => {
-      // すべて成功した場合
       console.log('Successfully processed and sent:', finalResponse)
     },
     (error) => {
-      // チェーンのどこかでエラーが発生した場合
       console.error('Error in processing chain:', error)
-      // ここでエラーに応じたフォールバック処理やログ記録を行う
     },
   )
 }
@@ -81,9 +78,13 @@ app.post('/webhook', zValidator('json', requestBodySchema), async (c) => {
 
   const { events } = c.req.valid('json')
   for (const event of events) {
-    if (event.type !== 'message') continue
-    if (event.message.type !== 'text') continue
-    if (!event.message.text) continue
+    if (
+      event.type !== 'message' ||
+      event.message.type !== 'text' ||
+      !event.message.text
+    ) {
+      continue
+    }
 
     // 各イベントの処理を非同期で実行
     c.executionCtx.waitUntil(handleMessageEvent(c, event))
@@ -98,26 +99,8 @@ app.get('/', async (c) => {
 
   return c.json({
     now: ret.results[0].now,
-    message: 'Hello Hono!',
+    message: 'Hello!',
   })
 })
-
-app.post(
-  '/posts',
-  zValidator(
-    'form',
-    z.object({
-      body: z.string(),
-    }),
-  ),
-  (c) => {
-    const validated = c.req.valid('form')
-    // ... use your validated data
-    return c.json({
-      message: 'ok',
-      validated,
-    })
-  },
-)
 
 export default app
