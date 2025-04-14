@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "dokodemo-issyo",
+  "name": "dokodemo",
   "main": "src/index.ts",
   "compatibility_date": "2025-04-14",
   "compatibility_flags": [
@@ -9,9 +9,9 @@
   ],
   "d1_databases": [
     {
-      "binding": "DOKODEMO_DB",
+      "binding": "DB",
       "database_name": "dokodemo_db",
-      "database_id": ""
+      "database_id": "93d26aac-5e27-4c81-9deb-8538bce3a9de"
     }
   ]
   // "compatibility_flags": [
