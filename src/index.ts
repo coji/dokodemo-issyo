@@ -117,29 +117,10 @@ app.post('/webhook', zValidator('json', requestBodySchema), async (c) => {
 
 app.get('/', async (c) => {
   const ret = await env.DB.prepare('SELECT datetime("now") as now').run()
-
   return c.json({
     now: ret.results[0].now,
-    message: 'Hello Hono!',
+    message: 'Hello!',
   })
 })
-
-app.post(
-  '/posts',
-  zValidator(
-    'form',
-    z.object({
-      body: z.string(),
-    }),
-  ),
-  (c) => {
-    const validated = c.req.valid('form')
-    // ... use your validated data
-    return c.json({
-      message: 'ok',
-      validated,
-    })
-  },
-)
 
 export default app

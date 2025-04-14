@@ -12,5 +12,6 @@ export function saveConversationHistory(
     )
       .bind(userId, message, response)
       .run(),
+    (error) => (error instanceof Error ? error : new Error(String(error))),
   ).map(() => {}) // 成功時はvoidを返す
 }
