@@ -1,8 +1,8 @@
 import { zValidator } from '@hono/zod-validator'
 import { validateSignature } from '@line/bot-sdk'
+import { env } from 'cloudflare:workers'
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { replyMessage } from './utils/line'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -39,27 +39,13 @@ app.post('/webhook', zValidator('json', requestBodySchema), async (c) => {
   }
 
   const { events } = c.req.valid('json')
-
-  for (const event of events) {
-    if (
-      event.type === 'message' &&
-      event.message.type === 'text' &&
-      event.message.text
-    ) {
-      const replyText = `オウム返し: ${event.message.text}` // とりあえずオウム返し
-      await replyMessage(
-        c.env.LINE_CHANNEL_ACCESS_TOKEN,
-        event.replyToken,
-        replyText,
-      )
-    }
-  }
-
-  return c.text('OK')
 })
 
-app.get('/', (c) => {
+app.get('/', async (c) => {
+  const ret = await env.DB.prepare('SELECT datetime("now") as now').run()
+
   return c.json({
+    now: ret.results[0].now,
     message: 'Hello Hono!',
   })
 })
