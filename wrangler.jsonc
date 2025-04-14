@@ -13,10 +13,11 @@
       "database_name": "dokodemo_db",
       "database_id": "93d26aac-5e27-4c81-9deb-8538bce3a9de"
     }
-  ]
-  // "compatibility_flags": [
-  //   "nodejs_compat"
-  // ],
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
   // "vars": {
   //   "MY_VAR": "my-variable"
   // },
@@ -42,8 +43,4 @@
   // "ai": {
   //   "binding": "AI"
   // },
-  // "observability": {
-  //   "enabled": true,
-  //   "head_sampling_rate": 1
-  // }
 }
