@@ -1,8 +1,11 @@
-export async function replyMessage(
+import { fromPromise, type ResultAsync } from 'neverthrow'
+
+// ResultAsync<void, Error> を返すように修正
+export function replyMessage(
   accessToken: string,
   replyToken: string,
   message: string,
-) {
+): ResultAsync<void, Error> {
   const url = 'https://api.line.me/v2/bot/message/reply'
   const headers = {
     'Content-Type': 'application/json',
@@ -18,23 +21,33 @@ export async function replyMessage(
     ],
   })
 
-  try {
-    const response = await fetch(url, {
+  // fetch を fromPromise でラップ
+  return fromPromise(
+    fetch(url, {
       method: 'POST',
       headers: headers,
       body: body,
-    })
-
-    if (!response.ok) {
-      console.error(
-        'Failed to reply message:',
-        response.status,
-        response.statusText,
-      )
-      const errorBody = await response.text()
-      console.error('Error body:', errorBody)
-    }
-  } catch (error) {
-    console.error('Error sending reply:', error)
-  }
+    }).then(async (response) => {
+      // fetch のレスポンスをチェック
+      if (!response.ok) {
+        const errorBody = await response.text()
+        console.error(
+          'Failed to reply message:',
+          response.status,
+          response.statusText,
+          errorBody,
+        )
+        // エラー時は Error オブジェクトを throw して fromPromise にキャッチさせる
+        throw new Error(
+          `Failed to reply message: ${response.status} ${response.statusText} - ${errorBody}`,
+        )
+      }
+      // 成功時は void (undefined) を返す Promise になる
+    }),
+    // fromPromise のエラーハンドラ
+    (error) => {
+      console.error('Error sending reply:', error)
+      return error instanceof Error ? error : new Error(String(error))
+    },
+  )
 }

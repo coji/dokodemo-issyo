@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS characters (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
   personality TEXT NOT NULL, -- 性格
-  口調 TEXT NOT NULL,      -- 口調
+  tone TEXT NOT NULL,      -- 口調
   default_response TEXT NOT NULL -- デフォルト応答
   -- 他にもキャラクター固有のパラメータを追加できます (例: 好感度、興味のある話題など)
 );

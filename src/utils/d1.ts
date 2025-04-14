@@ -1,7 +1,7 @@
+import { env } from 'cloudflare:workers'
 import { type ResultAsync, fromPromise } from 'neverthrow'
 
 export function saveConversationHistory(
-  env: Env,
   userId: string,
   message: string,
   response: string,
