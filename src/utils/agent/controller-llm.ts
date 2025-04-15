@@ -104,7 +104,7 @@ ${historyString || "なし"}
 	// Call the LLM using generateObject to get structured output
 	return fromPromise(
 		generateObject({
-			model: google("gemini-2.0-flash-lite-preview-02-05", {
+			model: google("gemini-2.5-pro-exp-03-25", {
 				structuredOutputs: false,
 			}),
 			schema: AgentActionSchema, // Use the Zod schema for output validation
