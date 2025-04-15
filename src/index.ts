@@ -38,15 +38,19 @@ async function handleMessageEvent(
   const text = event.message.text!
 
   const processingChain = analyzeIntent(text) // Intentを解析
-    .andThen((intent: Intent) => generateResponse(intent, userId)) // レスポンスを生成
-    .andThen((response) =>
+    .andThen((intent: Intent) => {
+      console.log({ intent })
+      return generateResponse(intent, userId)
+    }) // レスポンスを生成
+    .andThen((response) => {
+      console.log({ response })
       // LINEに返信
-      replyMessage(
+      return replyMessage(
         c.env.LINE_CHANNEL_ACCESS_TOKEN,
         event.replyToken,
         response,
-      ).map(() => response),
-    )
+      ).map(() => response)
+    })
     .andThen((response) =>
       // 会話履歴を保存
       saveConversationHistory(userId, text, response).map(() => response),

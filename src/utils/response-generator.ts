@@ -1,17 +1,31 @@
-import type { ResultAsync } from 'neverthrow'
-import { getCharacterResponse as fetchCharacterResponse } from './character' // 関数名が衝突するためリネーム
+import { google } from '@ai-sdk/google'
+import { generateText } from 'ai'
+import { fromPromise } from 'neverthrow' // okAsync, errAsync をインポート
 import type { Intent } from './intent-analyzer'
 
-export function generateResponse(
-  intent: Intent,
-  userId: string,
-): ResultAsync<string, Error> {
+// fromPromise を使わずに ResultAsync を返すように修正
+export function generateResponse(intent: Intent, userId: string) {
+  let prompt = ''
   switch (intent.type) {
     case 'greeting':
-      // ここでキャラクターごとの挨拶を返すようにする (今はトロ固定)
-      return fetchCharacterResponse(userId, '挨拶') // message引数は今は使わない
-    default:
-      // 意図不明な場合は、キャラクターのデフォルト応答を返す (今はトロ固定)
-      return fetchCharacterResponse(userId, '不明') // message引数は今は使わない
+      prompt =
+        'ユーザーから挨拶されました。フレンドリーな挨拶を返してください。'
+      break
+    default: // unknown
+      prompt =
+        'ユーザーの意図がよくわかりませんでした。何かお手伝いできることはありますか？と尋ねる応答をしてください。'
+      break
   }
+
+  return fromPromise(
+    generateText({
+      model: google('gemini-2.0-flash-lite-preview-02-05'),
+      prompt,
+      temperature: 0.7,
+    }).then((result) => result.text.trim()), // 成功したらテキストを返す
+    (error) => {
+      console.error('Error generating response with Gemini:', error)
+      return error instanceof Error ? error : new Error(String(error))
+    },
+  )
 }

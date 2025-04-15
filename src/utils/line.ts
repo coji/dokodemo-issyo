@@ -1,11 +1,10 @@
-import { fromPromise, type ResultAsync } from 'neverthrow'
+import { fromPromise } from 'neverthrow'
 
-// ResultAsync<void, Error> を返すように修正
 export function replyMessage(
   accessToken: string,
   replyToken: string,
   message: string,
-): ResultAsync<void, Error> {
+) {
   const url = 'https://api.line.me/v2/bot/message/reply'
   const headers = {
     'Content-Type': 'application/json',
