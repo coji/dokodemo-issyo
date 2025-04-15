@@ -137,7 +137,6 @@ Cloudflare Workers 上で動作する、Google Gemini を利用したキャラ�
 ```sh
 .
 ├── .gitignore           # Git で無視するファイル/ディレクトリ
-├── .prettierignore      # Prettier で無視するファイル
 ├── README.md            # このファイル
 ├── biome.json           # Biome (Linter/Formatter) 設定
 ├── migrations           # D1 データベースマイグレーションファイル
@@ -147,7 +146,6 @@ Cloudflare Workers 上で動作する、Google Gemini を利用したキャラ�
 ├── package.json         # プロジェクト情報と依存関係
 ├── pnpm-lock.yaml       # 依存関係のロックファイル
 ├── pnpm-workspace.yaml  # pnpm ワークスペース設定 (現状では単一プロジェクト)
-├── prettier.config.js   # Prettier 設定
 ├── schema.sql           # (参考用) D1 スキーマ定義 (最新は migrations を参照)
 ├── src                  # ソースコード
 │   ├── agent.ts         # キャラクターエージェントのメインロジック
