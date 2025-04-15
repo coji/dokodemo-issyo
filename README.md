@@ -166,7 +166,7 @@ Cloudflare Workers 上で動作する、Google Gemini を利用したキャラ�
 
 ## コードフォーマットとリント
 
-このプロジェクトでは Biome と Prettier を使用しています。
+このプロジェクトでは Biome を使用しています。
 
 * **フォーマット:**
 
