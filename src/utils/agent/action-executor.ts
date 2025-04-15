@@ -65,7 +65,7 @@ function executeGenerateNormalResponse(
 `;
 	return fromPromise(
 		generateText({
-			model: google("gemini-2.5-pro-exp-03-25"),
+			model: google("gemini-2.0-flash-lite-preview-02-05"),
 			prompt: prompt,
 			temperature: 0.7,
 		}).then((result) => result.text.trim()),
