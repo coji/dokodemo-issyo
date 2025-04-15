@@ -3,10 +3,11 @@ import { validateSignature } from '@line/bot-sdk'
 import { env } from 'cloudflare:workers'
 import { Hono, type Context } from 'hono' // Context を直接インポート
 import { z } from 'zod'
+import { processUserMessage } from './agent' // Import the agent processor
 import { saveConversationHistory } from './utils/d1'
-import { analyzeIntent, type Intent } from './utils/intent-analyzer' // Intent 型をインポート
+// import { analyzeIntent, type Intent } from './utils/intent-analyzer'; // No longer needed here
 import { replyMessage } from './utils/line'
-import { generateResponse } from './utils/response-generator'
+// import { generateResponse } from './utils/response-generator'; // No longer needed here
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -37,29 +38,29 @@ async function handleMessageEvent(
   const userId = event.source.userId || 'unknown-user'
   const text = event.message.text!
 
-  const processingChain = analyzeIntent(text) // Intentを解析
-    .andThen((intent: Intent) => {
-      console.log({ intent })
-      return generateResponse(intent, userId, text) // ユーザーメッセージを渡す
-    }) // レスポンスを生成
-    .andThen((response) => {
-      console.log({ response })
-      // LINEに返信
+  // Use the agent to process the message
+  const agentProcessingChain = processUserMessage(userId, text)
+    .andThen((agentResponse) => {
+      // Agent handled state updates internally (or suggested them)
+      // Now, reply via LINE and save history
+      console.log('Agent response:', agentResponse)
       return replyMessage(
         c.env.LINE_CHANNEL_ACCESS_TOKEN,
         event.replyToken,
-        response,
-      ).map(() => response)
+        agentResponse.responseText, // Use responseText from agent
+      ).map(() => agentResponse) // Pass agentResponse along
     })
-    .andThen((response) =>
-      // 会話履歴を保存
-      saveConversationHistory(userId, text, response).map(() => response),
+    .andThen((agentResponse) =>
+      // Save conversation history using the agent's response text
+      saveConversationHistory(userId, text, agentResponse.responseText).map(
+        () => agentResponse.responseText, // Return just the text for logging
+      ),
     )
 
-  // チェーンの最終結果を処理
-  await processingChain.match(
-    (finalResponse) => {
-      console.log('Successfully processed and sent:', finalResponse)
+  // Handle the final result of the agent processing chain
+  await agentProcessingChain.match(
+    (finalResponseText) => {
+      console.log('Successfully processed and sent:', finalResponseText)
     },
     (error) => {
       console.error('Error in processing chain:', error)

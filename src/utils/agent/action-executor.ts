@@ -1,0 +1,137 @@
+import { google } from '@ai-sdk/google' // Import google
+import { generateText } from 'ai' // Import generateText
+import { type ResultAsync, errAsync, fromPromise, okAsync } from 'neverthrow' // Import fromPromise
+import type { Character } from '../character'
+import type { AgentAction } from './controller-llm'
+
+// Define the result of executing an action
+export interface ExecutionResult {
+  responseText: string
+  stateChanges: Partial<
+    Pick<Character, 'mood' | 'learned_words' | 'current_activity'>
+  > // Suggested changes to state
+}
+
+/**
+ * Executes the given action based on the character's state and user message.
+ *
+ * @param action The action determined by the controller LLM.
+ * @param character The current state of the character.
+ * @param userMessage The latest message from the user.
+ * @returns A ResultAsync resolving to the ExecutionResult.
+ */
+export function executeAction(
+  action: AgentAction,
+  character: Character,
+  userMessage: string,
+): ResultAsync<ExecutionResult, Error> {
+  switch (action.type) {
+    case 'generate_normal_response':
+      return executeGenerateNormalResponse(character, userMessage)
+    case 'start_shiritori':
+      return executeStartShiritori(character)
+    case 'play_shiritori':
+      return executePlayShiritori(character, action.payload.previousWord)
+    case 'learn_word':
+      return executeLearnWord(character, action.payload.word)
+    case 'update_mood':
+      return executeUpdateMood(character, action.payload.newMood)
+    default:
+      // Ensure all action types are handled, or provide a fallback
+      console.warn('Unhandled action type:', (action as AgentAction).type)
+      return errAsync(
+        new Error(`Unhandled action type: ${(action as AgentAction).type}`),
+      )
+  }
+}
+
+// --- Action Implementation Functions ---
+
+function executeGenerateNormalResponse(
+  character: Character,
+  userMessage: string,
+): ResultAsync<ExecutionResult, Error> {
+  // Generate response using LLM, considering character state
+  const prompt = `
+あなたはキャラクター「${character.name}」です。
+性格: ${character.personality}
+口調: ${character.tone}
+現在の機嫌: ${character.mood}
+現在の活動: ${character.current_activity}
+
+ユーザーから以下のメッセージを受け取りました。キャラクターとして応答してください。
+ユーザーメッセージ: "${userMessage}"
+`
+  return fromPromise(
+    generateText({
+      model: google('gemini-2.0-flash-lite-preview-02-05'),
+      prompt: prompt,
+      temperature: 0.7,
+    }).then((result) => result.text.trim()),
+    (error) => {
+      console.error('Error generating normal response with Gemini:', error)
+      return error instanceof Error ? error : new Error(String(error))
+    },
+  ).map((responseText) => ({
+    responseText: responseText,
+    stateChanges: {}, // Normal response doesn't change state by default
+  }))
+}
+
+function executeStartShiritori(
+  character: Character,
+): ResultAsync<ExecutionResult, Error> {
+  console.log('TODO: Implement start_shiritori action', character)
+  const responseText = 'しりとりしよう！いいよ！僕から言うね。「りんご」！'
+  return okAsync({
+    responseText: responseText,
+    stateChanges: { current_activity: 'shiritori', mood: 'playful' }, // Example state change
+  })
+}
+
+function executePlayShiritori(
+  character: Character,
+  previousWord: string,
+): ResultAsync<ExecutionResult, Error> {
+  console.log('TODO: Implement play_shiritori action', character, previousWord)
+  // TODO: Add actual shiritori logic (maybe call LLM)
+  const nextWord = 'ゴリラ' // Placeholder
+  const responseText = `「${previousWord}」だね！次は「${nextWord}」！`
+  return okAsync({
+    responseText: responseText,
+    stateChanges: {}, // No state change unless the game ends etc.
+  })
+}
+
+function executeLearnWord(
+  character: Character,
+  word: string,
+): ResultAsync<ExecutionResult, Error> {
+  console.log('TODO: Implement learn_word action', character, word)
+  const currentWords: string[] = JSON.parse(character.learned_words || '[]')
+  // Ensure word is a string before adding
+  const safeWord = typeof word === 'string' ? word : String(word)
+  const updatedWords = JSON.stringify([...new Set([...currentWords, safeWord])]) // Add word, ensure unique
+
+  const responseText = `「${safeWord}」だね! 覚えたよ! えっへん!` // Use half-width symbols
+  return okAsync({
+    responseText: responseText,
+    stateChanges: { learned_words: updatedWords },
+  })
+}
+
+function executeUpdateMood(
+  character: Character,
+  newMood: string,
+): ResultAsync<ExecutionResult, Error> {
+  console.log('TODO: Implement update_mood action', character, newMood)
+  // This action might not generate a direct response,
+  // but could influence the *next* response generation.
+  // Or it could generate a simple acknowledgement.
+  const safeNewMood = typeof newMood === 'string' ? newMood : String(newMood)
+  const responseText = `(なんだか気分が${safeNewMood}になった気がする...)` // Correct template literal syntax and use half-width parentheses
+  return okAsync({
+    responseText: responseText, // Or maybe "" if no direct output
+    stateChanges: { mood: safeNewMood },
+  })
+}
