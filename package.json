@@ -1,24 +1,24 @@
 {
-  "name": "dokodemo-issyo",
-  "type": "module",
-  "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy --minify"
-  },
-  "dependencies": {
-    "@ai-sdk/google": "^1.2.11",
-    "@hono/zod-validator": "^0.4.3",
-    "@line/bot-sdk": "^9.8.0",
-    "ai": "^4.3.6",
-    "hono": "^4.7.6",
-    "neverthrow": "^8.2.0",
-    "zod": "^3.24.2"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "@types/node": "^22.14.1",
-    "prettier": "^3.5.3",
-    "prettier-plugin-organize-imports": "^4.1.0",
-    "wrangler": "^4.4.0"
-  }
+	"name": "dokodemo-issyo",
+	"type": "module",
+	"scripts": {
+		"dev": "wrangler dev",
+		"deploy": "wrangler deploy --minify",
+		"format": "biome format --write .",
+		"lint": "biome lint --write ."
+	},
+	"dependencies": {
+		"@ai-sdk/google": "^1.2.11",
+		"@hono/zod-validator": "^0.4.3",
+		"@line/bot-sdk": "^9.8.0",
+		"ai": "^4.3.6",
+		"hono": "^4.7.6",
+		"neverthrow": "^8.2.0",
+		"zod": "^3.24.2"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@types/node": "^22.14.1",
+		"wrangler": "^4.4.0"
+	}
 }

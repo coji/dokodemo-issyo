@@ -61,47 +61,42 @@ Cloudflare Workers 上で動作する、Google Gemini を利用したキャラ�
 
 1. **リポジトリをクローン:**
 
-    ```bash
-    git clone <repository-url>
-    cd dokodemo-issyo
-    ```
+```bash
+git clone https://github.com/coji/dokodemo-issyo
+cd dokodemo-issyo
+```
 
 2. **依存関係をインストール:**
 
-    ```bash
-    pnpm install
-    ```
+```bash
+pnpm install
+```
 
 3. **Cloudflare D1 データベースの準備:**
     * Wrangler を使用して D1 データベースを作成します (まだ存在しない場合)。
 
-        ```bash
-        # 例: wrangler d1 create dokodemo_db
-        ```
+```bash
+pnpm wrangler d1 create dokodemo_db
+```
 
     * 作成したデータベースの情報を `wrangler.jsonc` の `d1_databases` セクションに設定します (`database_name`, `database_id`)。
 4. **環境変数の設定:**
-    * プロジェクトルートに `.dev.vars` ファイルを作成します。
+    *プロジェクトルートに `.dev.vars` ファイルを作成します。
     * 以下の内容を記述し、実際の値に置き換えます。
 
-        ```ini
-        LINE_CHANNEL_ACCESS_TOKEN="<Your LINE Channel Access Token>"
-        LINE_CHANNEL_SECRET="<Your LINE Channel Secret>"
-        GOOGLE_GENERATIVE_AI_API_KEY="<Your Google Gemini API Key>"
-        # DB バインディングは wrangler.jsonc で設定されるため、ここには不要
-        ```
+```ini
+LINE_CHANNEL_ACCESS_TOKEN="<Your LINE Channel Access Token>"
+LINE_CHANNEL_SECRET="<Your LINE Channel Secret>"
+GOOGLE_GENERATIVE_AI_API_KEY="<Your Google Gemini API Key>"
+```
 
 5. **データベースマイグレーション:**
     * 開発環境用に D1 データベースのテーブルを作成し、初期データを投入します。
 
-        ```bash
-        # ローカル環境でのマイグレーション実行
-        pnpm run migrate:local
-        # または直接 Wrangler コマンドを実行
-        # wrangler d1 migrations apply DB --local
-        ```
-
-        *注: `migrate:local` スクリプトは `package.json` に追加する必要があります。例: `"migrate:local": "wrangler d1 migrations apply DB --local"`*
+```bash
+# ローカル環境でのマイグレーション実行
+pnpm wrangler d1 migrations apply DB --local
+```
 
 ## ローカル開発
 
@@ -123,27 +118,22 @@ Cloudflare Workers 上で動作する、Google Gemini を利用したキャラ�
 
 1. **Cloudflare にデプロイ:**
 
-    ```bash
-    pnpm deploy
-    ```
+```sh
+pnpm deploy
+```
 
 2. **本番環境の D1 マイグレーション:**
 
-    ```bash
-    # 本番環境へのマイグレーション実行
-    pnpm run migrate:prod
-    # または直接 Wrangler コマンドを実行
-    # wrangler d1 migrations apply DB
-    ```
+```sh
+pnpm wrangler d1 migrations apply DB --remote
+```
 
-    *注: `migrate:prod` スクリプトは `package.json` に追加する必要があります。例: `"migrate:prod": "wrangler d1 migrations apply DB"`*
 3. **LINE Webhook 設定:**
     * LINE Developers Console で、Webhook URL をデプロイされた Cloudflare Worker の URL (`https://dokodemo.<your-account>.workers.dev/webhook` のような形式) に更新します。
 
 ## ディレクトリ構成
 
-```
-
+```sh
 .
 ├── .gitignore           # Git で無視するファイル/ディレクトリ
 ├── .prettierignore      # Prettier で無視するファイル
@@ -173,7 +163,6 @@ Cloudflare Workers 上で動作する、Google Gemini を利用したキャラ�
 ├── tsconfig.json        # TypeScript コンパイラ設定
 ├── worker-configuration.d.ts # Cloudflare Worker の型定義
 └── wrangler.jsonc       # Wrangler (Cloudflare Workers CLI) 設定
-
 ```
 
 ## コードフォーマットとリント
@@ -182,31 +171,17 @@ Cloudflare Workers 上で動作する、Google Gemini を利用したキャラ�
 
 * **フォーマット:**
 
-    ```bash
-    # Biome でフォーマット (推奨)
-    pnpm run format
-    # または Prettier でフォーマット (一部ファイルのみ)
-    # pnpm prettier --write .
-    ```
+```bash
+# Biome でフォーマット
+pnpm run format
+```
 
 * **リント:**
 
-    ```bash
-    # Biome でリント
-    pnpm run lint
-    ```
-
-    *注: `format`, `lint` スクリプトは `package.json` に追加する必要があります。例:*
-
-    ```json
-    "scripts": {
-      "dev": "wrangler dev",
-      "deploy": "wrangler deploy --minify",
-      "format": "biome format --write .",
-      "lint": "biome lint --apply ."
-      // ... 他のスクリプト
-    },
-    ```
+```bash
+# Biome でリント
+pnpm run lint
+```
 
 ## 今後の改善点 (TODO)
 

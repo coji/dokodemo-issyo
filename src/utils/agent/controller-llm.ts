@@ -1,48 +1,48 @@
-import { google } from '@ai-sdk/google'
-import { generateObject } from 'ai'
-import { type ResultAsync, fromPromise } from 'neverthrow'
-import { z } from 'zod'
-import type { Character } from '../character'
+import { google } from "@ai-sdk/google";
+import { generateObject } from "ai";
+import { type ResultAsync, fromPromise } from "neverthrow";
+import { z } from "zod";
+import type { Character } from "../character";
 
 // Define Zod schemas for each action payload for validation
-const GenerateNormalResponsePayload = z.object({})
-const StartShiritoriPayload = z.object({})
+const GenerateNormalResponsePayload = z.object({});
+const StartShiritoriPayload = z.object({});
 const PlayShiritoriPayload = z.object({
-  previousWord: z.string(),
-  currentUserWord: z.string(), // Add user's word for validation
-})
-const LearnWordPayload = z.object({ word: z.string() })
-const UpdateMoodPayload = z.object({ newMood: z.string() })
+	previousWord: z.string(),
+	currentUserWord: z.string(), // Add user's word for validation
+});
+const LearnWordPayload = z.object({ word: z.string() });
+const UpdateMoodPayload = z.object({ newMood: z.string() });
 
 // Define Zod schema for the overall action structure
-const AgentActionSchema = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('generate_normal_response'),
-    payload: GenerateNormalResponsePayload,
-  }),
-  z.object({
-    type: z.literal('start_shiritori'),
-    payload: StartShiritoriPayload,
-  }),
-  z.object({
-    type: z.literal('play_shiritori'),
-    payload: PlayShiritoriPayload,
-  }),
-  z.object({ type: z.literal('learn_word'), payload: LearnWordPayload }),
-  z.object({ type: z.literal('update_mood'), payload: UpdateMoodPayload }),
-])
+const AgentActionSchema = z.discriminatedUnion("type", [
+	z.object({
+		type: z.literal("generate_normal_response"),
+		payload: GenerateNormalResponsePayload,
+	}),
+	z.object({
+		type: z.literal("start_shiritori"),
+		payload: StartShiritoriPayload,
+	}),
+	z.object({
+		type: z.literal("play_shiritori"),
+		payload: PlayShiritoriPayload,
+	}),
+	z.object({ type: z.literal("learn_word"), payload: LearnWordPayload }),
+	z.object({ type: z.literal("update_mood"), payload: UpdateMoodPayload }),
+]);
 
 // Define possible actions the agent can take (using Zod schema type)
 export type AgentAction =
-  | z.infer<typeof AgentActionSchema>
-  | { type: 'generate_normal_response'; payload: Record<string, never> }
-  | { type: 'start_shiritori'; payload: Record<string, never> }
-  | {
-      type: 'play_shiritori'
-      payload: { previousWord: string; currentUserWord: string }
-    }
-  | { type: 'learn_word'; payload: { word: string } }
-  | { type: 'update_mood'; payload: { newMood: string } }
+	| z.infer<typeof AgentActionSchema>
+	| { type: "generate_normal_response"; payload: Record<string, never> }
+	| { type: "start_shiritori"; payload: Record<string, never> }
+	| {
+			type: "play_shiritori";
+			payload: { previousWord: string; currentUserWord: string };
+	  }
+	| { type: "learn_word"; payload: { word: string } }
+	| { type: "update_mood"; payload: { newMood: string } };
 // Add more actions as needed
 
 /**
@@ -56,20 +56,20 @@ export type AgentAction =
  * @returns A ResultAsync resolving to the determined AgentAction.
  */
 export function determineNextAction(
-  character: Character,
-  userMessage: string,
-  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>, // Use conversation history
+	character: Character,
+	userMessage: string,
+	conversationHistory: Array<{ role: "user" | "assistant"; content: string }>, // Use conversation history
 ): ResultAsync<AgentAction, Error> {
-  // Format history for the prompt
-  const historyString = conversationHistory
-    .map(
-      (entry) =>
-        `${entry.role === 'user' ? 'User' : 'Assistant'}: ${entry.content}`,
-    )
-    .join('\n')
+	// Format history for the prompt
+	const historyString = conversationHistory
+		.map(
+			(entry) =>
+				`${entry.role === "user" ? "User" : "Assistant"}: ${entry.content}`,
+		)
+		.join("\n");
 
-  // Construct the prompt for the controller LLM
-  const prompt = `
+	// Construct the prompt for the controller LLM
+	const prompt = `
 あなたはキャラクター「${character.name}」の行動を決定するAIです。
 キャラクターの現在の状態とユーザーのメッセージを考慮し、次に取るべき最も適切な行動を一つだけ選択してください。
 
@@ -83,7 +83,7 @@ export function determineNextAction(
 - 親密度レベル: ${character.relationship_level}
 
 # 直近の会話履歴:
-${historyString || 'なし'}
+${historyString || "なし"}
 
 # ユーザーの最新メッセージ:
 "${userMessage}"
@@ -99,28 +99,28 @@ ${historyString || 'なし'}
 上記の情報を踏まえ、キャラクターが取るべき次の行動タイプと、必要であればそのペイロード（例: しりとりなら前の単語、学習なら覚える単語、機嫌更新なら新しい機嫌）をJSONオブジェクトとして出力してください。
 現在の活動が 'shiritori' で、ユーザーがしりとりに関連する言葉を言ってきた場合は 'play_shiritori' を選択し、previousWord をペイロードに含めてください。
 ユーザーが「〇〇を覚えて」のように言ってきた場合は 'learn_word' を選択し、word をペイロードに含めてください。
-`
+`;
 
-  // Call the LLM using generateObject to get structured output
-  return fromPromise(
-    generateObject({
-      model: google('gemini-2.0-flash-lite-preview-02-05', {
-        structuredOutputs: false,
-      }),
-      schema: AgentActionSchema, // Use the Zod schema for output validation
-      prompt: prompt,
-      temperature: 0.5, // Lower temperature for more deterministic action selection
-    }).then((result) => result.object), // Extract the validated object
-    (error) => {
-      console.error('Error determining next action with Gemini:', error)
-      // Fallback action if LLM fails
-      const fallbackAction: AgentAction = {
-        type: 'generate_normal_response',
-        payload: {},
-      }
-      return new Error(
-        `LLM action determination failed: ${error instanceof Error ? error.message : String(error)}`,
-      )
-    },
-  )
+	// Call the LLM using generateObject to get structured output
+	return fromPromise(
+		generateObject({
+			model: google("gemini-2.0-flash-lite-preview-02-05", {
+				structuredOutputs: false,
+			}),
+			schema: AgentActionSchema, // Use the Zod schema for output validation
+			prompt: prompt,
+			temperature: 0.5, // Lower temperature for more deterministic action selection
+		}).then((result) => result.object), // Extract the validated object
+		(error) => {
+			console.error("Error determining next action with Gemini:", error);
+			// Fallback action if LLM fails
+			const fallbackAction: AgentAction = {
+				type: "generate_normal_response",
+				payload: {},
+			};
+			return new Error(
+				`LLM action determination failed: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		},
+	);
 }
