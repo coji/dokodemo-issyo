@@ -7,7 +7,10 @@ import type { Character } from '../character'
 // Define Zod schemas for each action payload for validation
 const GenerateNormalResponsePayload = z.object({})
 const StartShiritoriPayload = z.object({})
-const PlayShiritoriPayload = z.object({ previousWord: z.string() })
+const PlayShiritoriPayload = z.object({
+  previousWord: z.string(),
+  currentUserWord: z.string(), // Add user's word for validation
+})
 const LearnWordPayload = z.object({ word: z.string() })
 const UpdateMoodPayload = z.object({ newMood: z.string() })
 
@@ -34,7 +37,10 @@ export type AgentAction =
   | z.infer<typeof AgentActionSchema>
   | { type: 'generate_normal_response'; payload: Record<string, never> }
   | { type: 'start_shiritori'; payload: Record<string, never> }
-  | { type: 'play_shiritori'; payload: { previousWord: string } }
+  | {
+      type: 'play_shiritori'
+      payload: { previousWord: string; currentUserWord: string }
+    }
   | { type: 'learn_word'; payload: { word: string } }
   | { type: 'update_mood'; payload: { newMood: string } }
 // Add more actions as needed
@@ -52,8 +58,16 @@ export type AgentAction =
 export function determineNextAction(
   character: Character,
   userMessage: string,
-  // conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>, // TODO: Add history
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>, // Use conversation history
 ): ResultAsync<AgentAction, Error> {
+  // Format history for the prompt
+  const historyString = conversationHistory
+    .map(
+      (entry) =>
+        `${entry.role === 'user' ? 'User' : 'Assistant'}: ${entry.content}`,
+    )
+    .join('\n')
+
   // Construct the prompt for the controller LLM
   const prompt = `
 あなたはキャラクター「${character.name}」の行動を決定するAIです。
@@ -67,6 +81,9 @@ export function determineNextAction(
 - 現在の活動: ${character.current_activity}
 - 覚えている単語: ${character.learned_words}
 - 親密度レベル: ${character.relationship_level}
+
+# 直近の会話履歴:
+${historyString || 'なし'}
 
 # ユーザーの最新メッセージ:
 "${userMessage}"
@@ -87,7 +104,9 @@ export function determineNextAction(
   // Call the LLM using generateObject to get structured output
   return fromPromise(
     generateObject({
-      model: google('gemini-2.0-flash-lite-preview-02-05'),
+      model: google('gemini-2.0-flash-lite-preview-02-05', {
+        structuredOutputs: false,
+      }),
       schema: AgentActionSchema, // Use the Zod schema for output validation
       prompt: prompt,
       temperature: 0.5, // Lower temperature for more deterministic action selection

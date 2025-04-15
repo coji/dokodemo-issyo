@@ -31,7 +31,8 @@ export function executeAction(
     case 'start_shiritori':
       return executeStartShiritori(character)
     case 'play_shiritori':
-      return executePlayShiritori(character, action.payload.previousWord)
+      // Pass the entire payload object
+      return executePlayShiritori(character, action.payload)
     case 'learn_word':
       return executeLearnWord(character, action.payload.word)
     case 'update_mood':
@@ -89,17 +90,83 @@ function executeStartShiritori(
   })
 }
 
+// Helper function to get the last character (handling potential variations)
+function getLastChar(word: string): string | null {
+  if (!word) return null
+  // Basic handling for Japanese vowels and small tsu, extend as needed
+  const lastChar = word.slice(-1)
+  // TODO: Add more sophisticated handling for Japanese specific rules (long vowels, small kana etc.)
+  return lastChar
+}
+
+// Helper function to check if a word ends with 'ん' or 'ン'
+function endsWithN(word: string): boolean {
+  return word.endsWith('ん') || word.endsWith('ン')
+}
+
 function executePlayShiritori(
   character: Character,
-  previousWord: string,
+  payload: { previousWord: string; currentUserWord: string },
 ): ResultAsync<ExecutionResult, Error> {
-  console.log('TODO: Implement play_shiritori action', character, previousWord)
-  // TODO: Add actual shiritori logic (maybe call LLM)
-  const nextWord = 'ゴリラ' // Placeholder
-  const responseText = `「${previousWord}」だね！次は「${nextWord}」！`
-  return okAsync({
-    responseText: responseText,
-    stateChanges: {}, // No state change unless the game ends etc.
+  const { previousWord, currentUserWord } = payload
+  console.log('Executing play_shiritori action:', character, payload)
+
+  // 1. Validate user's word
+  const lastCharOfPrevious = getLastChar(previousWord)
+  const firstCharOfCurrent = currentUserWord ? currentUserWord.charAt(0) : null
+
+  if (!lastCharOfPrevious || !firstCharOfCurrent) {
+    return okAsync({
+      responseText:
+        'あれ？前の単語か今の単語がよくわからないや。もう一回言ってくれる？',
+      stateChanges: {},
+    })
+  }
+
+  if (endsWithN(currentUserWord)) {
+    return okAsync({
+      responseText: `あ！「${currentUserWord}」って「ん」で終わっちゃった！僕の勝ちかな？もう一回やる？`,
+      stateChanges: { current_activity: 'normal', mood: 'happy' }, // Game ends
+    })
+  }
+
+  if (lastCharOfPrevious.toLowerCase() !== firstCharOfCurrent.toLowerCase()) {
+    // TODO: Add more sophisticated comparison (Hiragana/Katakana, small/large kana)
+    return okAsync({
+      responseText: `えーっと、「${currentUserWord}」は「${lastCharOfPrevious}」から始まってないみたいだよ？`,
+      stateChanges: {},
+    })
+  }
+
+  // 2. Generate next word using LLM
+  const prompt = `
+あなたはキャラクター「${character.name}」です。今ユーザーと「しりとり」をしています。
+性格: ${character.personality}
+口調: ${character.tone}
+前の単語: ${currentUserWord}
+
+ルールに従って、前の単語「${currentUserWord}」に続く、ひらがなかカタカナの単語を一つだけ答えてください。
+「ん」で終わる単語はダメです。キャラクターになりきって、応答も考えてください。
+例: 「次は〇〇だよ！」
+`
+  return fromPromise(
+    generateText({
+      model: google('gemini-2.0-flash-lite-preview-02-05'),
+      prompt: prompt,
+      temperature: 0.8, // Slightly higher temperature for variety
+    }).then((result) => result.text.trim()),
+    (error) => {
+      console.error('Error generating shiritori response with Gemini:', error)
+      return error instanceof Error ? error : new Error(String(error))
+    },
+  ).map((llmResponse) => {
+    // TODO: Extract the actual next word from llmResponse if needed for state
+    // For now, assume llmResponse is the full character response including the next word.
+    // We might need to update 'previousWord' in the character state if we store it.
+    return {
+      responseText: llmResponse,
+      stateChanges: {}, // Keep activity as 'shiritori'
+    }
   })
 }
 
