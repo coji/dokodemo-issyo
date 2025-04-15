@@ -1,7 +1,8 @@
 import { env } from 'cloudflare:workers'
 import { type ResultAsync, errAsync, fromPromise, okAsync } from 'neverthrow'
 
-interface Character {
+export interface Character {
+  // Character インターフェースをエクスポート
   id: number
   name: string
   personality: string
@@ -10,7 +11,7 @@ interface Character {
 }
 
 // キャラクター情報を名前で取得する関数 (例)
-async function fetchCharacterByName(
+export async function fetchCharacterByName( // fetchCharacterByName 関数をエクスポート
   characterName: string,
 ): Promise<Character | null> {
   const stmt = env.DB.prepare('SELECT * FROM characters WHERE name = ?')
