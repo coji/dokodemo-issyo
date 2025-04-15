@@ -4,16 +4,18 @@ import { fromPromise } from 'neverthrow' // okAsync, errAsync をインポート
 import type { Intent } from './intent-analyzer'
 
 // fromPromise を使わずに ResultAsync を返すように修正
-export function generateResponse(intent: Intent, userId: string) {
+export function generateResponse(
+  intent: Intent,
+  userId: string,
+  userMessage: string,
+) {
   let prompt = ''
   switch (intent.type) {
     case 'greeting':
-      prompt =
-        'ユーザーから挨拶されました。フレンドリーな挨拶を返してください。'
+      prompt = `ユーザーから「${userMessage}」と挨拶されました。フレンドリーな挨拶を返してください。`
       break
     default: // unknown
-      prompt =
-        'ユーザーの意図がよくわかりませんでした。何かお手伝いできることはありますか？と尋ねる応答をしてください。'
+      prompt = `ユーザーから「${userMessage}」というメッセージがありましたが、意図がよくわかりませんでした。何かお手伝いできることはありますか？と尋ねる応答をしてください。`
       break
   }
 

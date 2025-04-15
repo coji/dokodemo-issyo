@@ -40,7 +40,7 @@ async function handleMessageEvent(
   const processingChain = analyzeIntent(text) // Intentを解析
     .andThen((intent: Intent) => {
       console.log({ intent })
-      return generateResponse(intent, userId)
+      return generateResponse(intent, userId, text) // ユーザーメッセージを渡す
     }) // レスポンスを生成
     .andThen((response) => {
       console.log({ response })
