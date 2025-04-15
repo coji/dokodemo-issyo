@@ -61,42 +61,43 @@ Cloudflare Workers 上で動作する、Google Gemini を利用したキャラ�
 
 1. **リポジトリをクローン:**
 
-```bash
-git clone https://github.com/coji/dokodemo-issyo
-cd dokodemo-issyo
-```
+    ```bash
+    git clone https://github.com/coji/dokodemo-issyo
+    cd dokodemo-issyo
+    ```
 
 2. **依存関係をインストール:**
 
-```bash
-pnpm install
-```
+    ```bash
+    pnpm install
+    ```
 
 3. **Cloudflare D1 データベースの準備:**
     * Wrangler を使用して D1 データベースを作成します (まだ存在しない場合)。
 
-```bash
-pnpm wrangler d1 create dokodemo_db
-```
+    ```bash
+    pnpm wrangler d1 create dokodemo_db
+    ```
 
-    * 作成したデータベースの情報を `wrangler.jsonc` の `d1_databases` セクションに設定します (`database_name`, `database_id`)。
+作成したデータベースの情報を `wrangler.jsonc` の `d1_databases` セクションに設定します (`database_name`, `database_id`)。
+
 4. **環境変数の設定:**
     *プロジェクトルートに `.dev.vars` ファイルを作成します。
     * 以下の内容を記述し、実際の値に置き換えます。
 
-```ini
-LINE_CHANNEL_ACCESS_TOKEN="<Your LINE Channel Access Token>"
-LINE_CHANNEL_SECRET="<Your LINE Channel Secret>"
-GOOGLE_GENERATIVE_AI_API_KEY="<Your Google Gemini API Key>"
-```
+        ```ini
+        LINE_CHANNEL_ACCESS_TOKEN="<Your LINE Channel Access Token>"
+        LINE_CHANNEL_SECRET="<Your LINE Channel Secret>"
+        GOOGLE_GENERATIVE_AI_API_KEY="<Your Google Gemini API Key>"
+        ```
 
 5. **データベースマイグレーション:**
     * 開発環境用に D1 データベースのテーブルを作成し、初期データを投入します。
 
-```bash
-# ローカル環境でのマイグレーション実行
-pnpm wrangler d1 migrations apply DB --local
-```
+        ```bash
+        # ローカル環境でのマイグレーション実行
+        pnpm wrangler d1 migrations apply DB --local
+        ```
 
 ## ローカル開発
 
@@ -118,15 +119,15 @@ pnpm wrangler d1 migrations apply DB --local
 
 1. **Cloudflare にデプロイ:**
 
-```sh
-pnpm deploy
-```
+    ```sh
+    pnpm deploy
+    ```
 
 2. **本番環境の D1 マイグレーション:**
 
-```sh
-pnpm wrangler d1 migrations apply DB --remote
-```
+    ```sh
+    pnpm wrangler d1 migrations apply DB --remote
+    ```
 
 3. **LINE Webhook 設定:**
     * LINE Developers Console で、Webhook URL をデプロイされた Cloudflare Worker の URL (`https://dokodemo.<your-account>.workers.dev/webhook` のような形式) に更新します。
@@ -171,17 +172,17 @@ pnpm wrangler d1 migrations apply DB --remote
 
 * **フォーマット:**
 
-```bash
-# Biome でフォーマット
-pnpm run format
-```
+    ```bash
+    # Biome でフォーマット
+    pnpm run format
+    ```
 
 * **リント:**
 
-```bash
-# Biome でリント
-pnpm run lint
-```
+    ```bash
+    # Biome でリント
+    pnpm run lint
+    ```
 
 ## 今後の改善点 (TODO)
 
@@ -190,5 +191,3 @@ pnpm run lint
 * Controller LLM のプロンプトチューニングによる精度向上
 * エラーハンドリングの強化
 * テストコードの追加
-
----
